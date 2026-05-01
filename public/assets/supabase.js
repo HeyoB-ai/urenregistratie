@@ -1,10 +1,13 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const SUPABASE_URL = 'https://diwrapirtfmztiobneck.supabase.co'
-// Publishable key (nieuwe Supabase formaat — vervangt de legacy anon JWT). Veilig in frontend; RLS doet het echte werk.
-const SUPABASE_ANON_KEY = 'sb_publishable_0ogxR52g8JSyKtcwRf2O6g_P1bdP16o'
+// Config wordt opgehaald uit /.netlify/functions/config (zie netlify/functions/config.js).
+// Waarden komen uit Netlify env vars SUPABASE_URL + SUPABASE_ANON_KEY — niet hardcoded hier.
+const cfg = await fetch('/.netlify/functions/config').then((r) => {
+  if (!r.ok) throw new Error('Supabase config laden mislukt: HTTP ' + r.status)
+  return r.json()
+})
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+export const supabase = createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,

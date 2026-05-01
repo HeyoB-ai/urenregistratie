@@ -28,7 +28,7 @@ QBtec/
 │   ├── hr.html                           HR dashboard (tabs, NMBRS, sluit)
 │   ├── voorman.html                      voorman portaal (deadline + tabel)
 │   └── assets/
-│       ├── supabase.js                   client (URL + anon key hardcoded)
+│       ├── supabase.js                   client (laadt config via /.netlify/functions/config)
 │       ├── auth.js                       login / logout / rol-redirect
 │       ├── render.js                     renderVM, renderHR, helpers
 │       ├── corrections.js                gedeelde event delegation
@@ -37,6 +37,7 @@ QBtec/
 │       ├── style.css                     login + dashboard CSS
 │       └── xlsx.full.min.js              placeholder (SheetJS via CDN in HTML)
 ├── netlify/functions/
+│   ├── config.js                         GET: publieke Supabase config (URL + anon key)
 │   ├── parse-excel.js                    POST: JWT → multipart → RPC
 │   └── send-weekly-emails.js             cron + handmatige trigger
 ├── supabase/
@@ -196,33 +197,15 @@ git push -u origin main
 
 | Key | Waarde |
 |---|---|
-| `SUPABASE_URL` | uit Supabase API settings |
-| `SUPABASE_SERVICE_KEY` | uit Supabase API settings (service_role) |
+| `SUPABASE_URL` | uit Supabase API settings — gebruikt door functions én frontend (via `/config`) |
+| `SUPABASE_ANON_KEY` | publishable key (`sb_publishable_...`) — gebruikt door frontend via `/config` |
+| `SUPABASE_SERVICE_KEY` | secret/service_role key — alleen server-side functions, nooit naar frontend |
 | `BREVO_API_KEY` | uit Brevo API Keys |
 | `APP_URL` | tijdelijk de Netlify URL (`https://urenregistratie.netlify.app`), na DNS de custom URL |
 
-> `SUPABASE_ANON_KEY` is niet nodig als env var op Netlify — die staat hardcoded in de frontend (zie 5.4).
+De frontend haalt `SUPABASE_URL` + `SUPABASE_ANON_KEY` runtime op via `GET /.netlify/functions/config`. Daardoor staan er geen hardcoded credentials in de source code en triggert de Netlify secret scanner niet.
 
-### 5.4. Frontend keys invullen
-
-Open `public/assets/supabase.js` en vervang de twee placeholders:
-
-```javascript
-const SUPABASE_URL = 'https://xxxx.supabase.co'         // << jouw URL
-const SUPABASE_ANON_KEY = 'eyJ...'                      // << jouw anon key
-```
-
-Commit en push:
-
-```bash
-git add public/assets/supabase.js
-git commit -m "chore: vul Supabase keys voor productie"
-git push
-```
-
-Netlify deployt automatisch opnieuw.
-
-### 5.5. Custom domain (productie)
+### 5.4. Custom domain (productie)
 
 1. **Site settings › Domain management › Add custom domain** → `uren.qbtec.nl`
 2. Stel in DNS van `qbtec.nl` een CNAME `uren` → de Netlify site URL
@@ -230,6 +213,12 @@ Netlify deployt automatisch opnieuw.
 4. Update `APP_URL` env-var op Netlify naar `https://uren.qbtec.nl`
 5. Voeg `https://uren.qbtec.nl/auth-callback.html` toe in Supabase Redirect URLs (3.3)
 6. Trigger nieuwe deploy zodat env-var van kracht wordt
+
+---
+
+### 5.5. Eerste deploy
+
+Trigger handmatig een nieuwe deploy via **Deploys › Trigger deploy › Deploy site** zodat de env-vars actief worden in de functions.
 
 ---
 
