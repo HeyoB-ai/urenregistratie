@@ -1,0 +1,19 @@
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+[functions."send-weekly-emails"]
+  schedule = "0 7 * * 1-5"
+
+[[redirects]]
+  from = "/auth-callback"
+  to = "/auth-callback.html"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

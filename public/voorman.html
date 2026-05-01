@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Voormanportaal — QBTec Urenregistratie</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <h1>Urenregistratie — Voormanportaal</h1>
+  <div class="hdr-actions">
+    <span id="hdr-period"></span>
+    <button id="logout-btn" class="logout-btn">Uitloggen</button>
+  </div>
+</header>
+
+<div class="container">
+  <div class="deadline-bar info" id="deadline-bar" hidden>
+    <span id="deadline-text"></span>
+  </div>
+  <div id="vm-content">
+    <div class="empty"><div class="icon">⏳</div><p>Bezig met laden…</p></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script type="module" src="assets/voorman.js"></script>
+</body>
+</html>

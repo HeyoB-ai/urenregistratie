@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Inloggen — QBTec Urenregistratie</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body class="login-page">
+  <main class="login-card">
+    <img
+      class="login-logo"
+      src="https://www.qbtec.nl/wp-content/webp-express/webp-images/uploads/2020/11/logo-qbtec.png.webp"
+      alt="QBTec">
+    <h1 class="login-title">Urenregistratie</h1>
+
+    <form id="login-form" novalidate>
+      <div class="login-field">
+        <label for="email">E-mailadres</label>
+        <input id="email" name="email" type="email" autocomplete="email" required>
+      </div>
+      <button id="login-button" class="login-button" type="submit">Stuur inloglink</button>
+    </form>
+
+    <div id="login-message" class="login-message" hidden></div>
+  </main>
+
+  <script type="module">
+    import { sendMagicLink } from './assets/auth.js'
+
+    const form = document.getElementById('login-form')
+    const button = document.getElementById('login-button')
+    const emailInput = document.getElementById('email')
+    const message = document.getElementById('login-message')
+
+    function showMessage(type, text) {
+      message.className = 'login-message ' + type
+      message.textContent = text
+      message.hidden = false
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault()
+      const email = emailInput.value.trim()
+      if (!email) {
+        emailInput.focus()
+        return
+      }
+      button.disabled = true
+      button.textContent = 'Versturen…'
+      message.hidden = true
+
+      const error = await sendMagicLink(email)
+
+      if (error) {
+        showMessage('error', 'Er ging iets mis: ' + (error.message || 'probeer het opnieuw.'))
+        button.disabled = false
+        button.textContent = 'Stuur inloglink'
+      } else {
+        showMessage('success', 'Controleer uw e-mail voor de inloglink.')
+        form.hidden = true
+      }
+    })
+  </script>
+</body>
+</html>

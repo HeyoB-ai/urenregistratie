@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Urenregistratie — Voormanportaal</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;font-size:14px;background:#f4f5f7;color:#1a1a2e;min-height:100vh}
+header{background:#1a3a5c;color:#fff;padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between}
+header h1{font-size:16px;font-weight:600}
+header span{font-size:12px;opacity:.7}
+.nav-tabs{background:#fff;border-bottom:1px solid #dde2ea;padding:0 24px;display:flex}
+.tab-btn{padding:12px 20px;border:none;background:transparent;font-size:13px;color:#5a6a7e;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:Arial,sans-serif}
+.tab-btn.active{color:#1a3a5c;border-bottom-color:#1a3a5c;font-weight:600}
+.tab-btn:hover:not(.active){background:#f4f5f7}
+.container{padding:20px 24px;max-width:1800px}
+.upload-zone{border:2px dashed #b0bec5;border-radius:10px;padding:48px 24px;text-align:center;background:#fff;cursor:pointer;transition:border-color .2s,background .2s;margin-bottom:24px}
+.upload-zone:hover,.upload-zone.drag{border-color:#1a3a5c;background:#f0f4f8}
+.upload-zone p{color:#5a6a7e;margin-top:8px;font-size:13px}
+.upload-zone .icon{font-size:36px;margin-bottom:8px}
+#file-input{display:none}
+.toolbar{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.toolbar h2{font-size:15px;font-weight:600;color:#1a1a2e;flex:1}
+.period-label{font-size:12px;background:#e8eef5;color:#1a3a5c;padding:4px 10px;border-radius:4px;font-weight:500}
+.stats-row{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.stat-card{background:#fff;border:1px solid #dde2ea;border-radius:8px;padding:12px 16px;min-width:110px}
+.stat-card .lbl{font-size:11px;color:#5a6a7e;margin-bottom:4px}
+.stat-card .val{font-size:20px;font-weight:600;color:#1a1a2e}
+.stat-card.open .val{color:#e65c00}
+.stat-card.ok .val{color:#2e7d32}
+.stat-card.corr .val{color:#1565c0}
+.table-card{background:#fff;border:1px solid #dde2ea;border-radius:10px;overflow:hidden;margin-bottom:20px}
+.card-hdr{padding:12px 16px;border-bottom:1px solid #dde2ea;display:flex;align-items:center;gap:10px;background:#f8f9fb}
+.card-hdr h3{font-size:13px;font-weight:600;color:#1a1a2e;flex:1}
+.dept-badge{font-size:11px;padding:3px 9px;border-radius:4px;background:#e8eef5;color:#1a3a5c;font-weight:500}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead tr.grp th{background:#eef1f6;padding:5px 8px;text-align:center;font-size:10px;font-weight:700;color:#1a3a5c;letter-spacing:.4px;border-bottom:1px solid #dde2ea;text-transform:uppercase;white-space:nowrap}
+thead tr.cols th{background:#f4f5f7;padding:7px 8px;font-weight:600;font-size:11px;color:#5a6a7e;border-bottom:1px solid #dde2ea;white-space:nowrap}
+thead tr.cols th.r{text-align:right}
+thead tr.cols th.c{text-align:center}
+.sl{border-left:2px solid #c8d4e0!important}
+tbody td{padding:6px 8px;border-bottom:1px solid #f0f2f5;vertical-align:middle;color:#1a1a2e}
+tbody td.r{text-align:right;font-variant-numeric:tabular-nums}
+tbody td.c{text-align:center}
+tbody tr:hover td{background:#f8f9fb}
+tbody tr.tot td{background:#f0f4f8;font-weight:600;border-top:1px solid #c8d4e0;color:#1a3a5c;font-size:11px}
+.badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:4px;font-weight:600;letter-spacing:.3px;white-space:nowrap}
+.b-ok{background:#e8f5e9;color:#2e7d32}
+.b-open{background:#fff3e0;color:#e65c00}
+.b-corr{background:#e3f2fd;color:#1565c0}
+.neg{color:#c62828}
+.time-laat{color:#c62828;font-weight:700}
+input.ci{width:50px;padding:3px 4px;border:1px solid #90a4ae;border-radius:4px;font-size:11px;text-align:right;background:#fff;font-family:Arial,sans-serif;color:#1a1a2e}
+input.ci:focus{outline:none;border-color:#1a3a5c}
+input.ci.red{background:#ffebee;border-color:#e53935;color:#b71c1c;font-weight:700}
+input.ui{width:44px;padding:3px 4px;border:1px solid #c8d4e0;border-radius:4px;font-size:11px;text-align:right;background:#fff;font-family:Arial,sans-serif;color:#1a1a2e}
+input.ui:focus{outline:none;border-color:#1a3a5c;background:#f0f4ff}
+input.ui.hv{background:#fff8e1;border-color:#f9a825}
+textarea.oi{width:130px;padding:3px 5px;border:1px solid #dde2ea;border-radius:4px;font-size:11px;resize:none;height:28px;font-family:Arial,sans-serif;color:#1a1a2e;background:#fff}
+input.ui.ow-over{background:#ffebee!important;border-color:#e53935!important;color:#b71c1c!important;font-weight:700}
+textarea.oi:focus{outline:none;border-color:#1a3a5c}
+.btn{padding:7px 14px;border-radius:5px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid transparent;font-family:Arial,sans-serif;transition:opacity .15s}
+.btn:hover{opacity:.85}
+.btn-p{background:#1a3a5c;color:#fff;border-color:#1a3a5c}
+.btn-s{background:#2e7d32;color:#fff;border-color:#2e7d32}
+.btn-o{background:#fff;color:#1a3a5c;border-color:#1a3a5c}
+.btn-sm{padding:4px 10px;font-size:11px}
+.approve-bar{display:flex;align-items:center;gap:12px;padding:10px 16px;border-top:1px solid #dde2ea;background:#f8f9fb;flex-wrap:wrap}
+.approve-bar .leg{font-size:11px;color:#5a6a7e;display:flex;gap:14px;flex:1;flex-wrap:wrap;align-items:center}
+.approve-bar .as{font-size:11px;color:#90a4ae}
+.empty{text-align:center;padding:60px 24px;color:#5a6a7e}
+.empty .icon{font-size:40px;margin-bottom:12px}
+#toast{position:fixed;bottom:24px;right:24px;background:#2e7d32;color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:500;display:none;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Urenregistratie — Voormanportaal</h1>
+  <span id="hdr-period"></span>
+</header>
+
+<div class="nav-tabs">
+  <button class="tab-btn active" onclick="showTab('vm',this)">Voorman</button>
+  <button class="tab-btn" onclick="showTab('hr',this)">HR-overzicht</button>
+</div>
+
+<div class="container">
+  <div class="upload-zone" id="upload-zone"
+    onclick="document.getElementById('file-input').click()"
+    ondragover="event.preventDefault();this.classList.add('drag')"
+    ondragleave="this.classList.remove('drag')"
+    ondrop="handleDrop(event)">
+    <div class="icon">📊</div>
+    <strong>Klik om de Immotix Excel te uploaden</strong>
+    <p>Of sleep het bestand hierheen &nbsp;·&nbsp; .xlsx</p>
+  </div>
+  <input type="file" id="file-input" accept=".xlsx" onchange="handleFile(this.files[0])">
+
+  <div id="tab-vm">
+    <div id="vm-content"><div class="empty"><div class="icon">📂</div><p>Upload eerst de Immotix Excel.</p></div></div>
+  </div>
+  <div id="tab-hr" style="display:none">
+    <div id="hr-content"><div class="empty"><div class="icon">📂</div><p>Upload eerst de Immotix Excel.</p></div></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+let DATA = [];   // medewerkers
+let CORR = {};   // { mdwnr: { datum: {gepresteerd?,ow100?,ow125?,ow150?,ow200?,ziek?,verlof?}, '__note__'?:{opmerking} } }
+let APPR = {};   // { mdwnr: bool }
+let PERIODE = '';
+
+/* ── Tabs ── */
+function showTab(tab, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-vm').style.display = tab==='vm' ? '' : 'none';
+  document.getElementById('tab-hr').style.display = tab==='hr' ? '' : 'none';
+  if (tab==='hr') renderHR();
+}
+
+/* ── Bestand ── */
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('drag');
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+}
+function handleFile(file) {
+  if (!file) return;
+  const r = new FileReader();
+  r.onload = e => {
+    const wb = XLSX.read(e.target.result, {type:'array'});
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    parse(XLSX.utils.sheet_to_json(ws, {header:1, defval:null}));
+  };
+  r.readAsArrayBuffer(file);
+}
+
+/* ── Parsing ── */
+function parse(rows) {
+  const title = rows[0] ? String(rows[0][0]||'') : '';
+  const pm = title.match(/Selectie:\s*(.+)/);
+  PERIODE = pm ? pm[1].trim() : '';
+  document.getElementById('hdr-period').textContent = PERIODE;
+
+  DATA = []; let cur = null;
+
+  for (const r of rows.slice(3)) {
+    if (!r || r.every(c=>c===null||c==='')) continue;
+    const mdwnr = r[0]!=null ? String(r[0]).trim() : null;
+    const col1  = r[1]!=null ? String(r[1]).trim() : null;
+    const afd   = r[2]!=null ? String(r[2]).trim() : null;
+    const datum = r[3]!=null ? String(r[3]).trim() : null;
+
+    if (col1==='Totaal') {
+      if (cur) { cur.totaal={gepland:N(r[6])}; DATA.push(cur); cur=null; }
+      continue;
+    }
+    if (mdwnr && mdwnr!=='') {
+      cur = {mdwnr, naam:col1||`Mdw. ${mdwnr}`, afdeling:afd||'', dagen:[], totaal:null};
+    }
+    if (datum && datum!=='' && cur) {
+      cur.dagen.push({
+        datum,
+        tijdIn : N(r[4]),  // vroegste boeking (decimale uren bv 7.5 = 07:30)
+        tijdUit: N(r[5]),  // laatste boeking
+        gepland: N(r[6]),
+        gep    : N(r[7]),  // netto gepresteerd (saldo) uit Immotix
+        ow100  : N(r[11]),
+        ow125  : N(r[12]),
+        ziek   : N(r[13]),
+        verlof : N(r[14]),
+      });
+      if (!cur.afdeling && afd) cur.afdeling = afd;
+    }
+  }
+
+  CORR={}; APPR={};
+  DATA.forEach(m=>{ CORR[m.mdwnr]={}; APPR[m.mdwnr]=false; });
+  document.getElementById('upload-zone').style.display='none';
+  renderVM();
+}
+
+/* ── Helpers ── */
+const N   = v => { if(v===null||v===undefined||v==='-'||v==='') return null; const x=parseFloat(v); return isNaN(x)?null:x; };
+const F   = (v,d=2) => v===null||v===undefined ? '—' : Number(v).toFixed(d).replace('.',',');
+const ESC = s => s.replace(/'/g,"\\'");
+
+function toHHMM(dec) {
+  if (dec===null||dec===undefined) return '—';
+  const h=Math.floor(dec), m=Math.round((dec-h)*60);
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+}
+const isLaat = dec => dec!==null && dec > 7.0;  // tijdstip-in na 07:00
+
+function byAfd() {
+  const map={};
+  DATA.forEach(m=>{ const a=m.afdeling||'Overig'; if(!map[a])map[a]=[]; map[a].push(m); });
+  return map;
+}
+const getC    = (mdwnr,datum) => (CORR[mdwnr]||{})[datum]||{};
+const getNote = mdwnr => ((CORR[mdwnr]||{})['__note__']||{}).opmerking||'';
+
+function getStatus(mdwnr) {
+  if (APPR[mdwnr]) return 'ok';
+  const c=CORR[mdwnr]||{};
+  return Object.keys(c).some(k=>k!=='__note__' && Object.keys(c[k]).length>0) ? 'corr' : 'open';
+}
+
+function calcTot(m) {
+  let gep=0,dag=0,ow100=0,ow125=0,ow150=0,ow200=0,ziek=0,verlof=0,reiskosten=0;
+  m.dagen.forEach(d=>{
+    const c=getC(m.mdwnr,d.datum);
+    const g = c.gepresteerd!==undefined ? c.gepresteerd : (d.gep||0);
+    gep   += g;
+    dag   += g-(d.gepland||0);
+    ow100 += c.ow100 !==undefined?c.ow100 :(d.ow100 ||0);
+    ow125 += c.ow125 !==undefined?c.ow125 :(d.ow125 ||0);
+    ow150 += c.ow150 !==undefined?c.ow150 :0;
+    ow200 += c.ow200 !==undefined?c.ow200 :0;
+    ziek  += c.ziek  !==undefined?c.ziek  :(d.ziek  ||0);
+    verlof+= c.verlof!==undefined?c.verlof:(d.verlof||0);
+    reiskosten += c.reiskosten!==undefined?c.reiskosten:0;
+  });
+  return {gep,dag,ow100,ow125,ow150,ow200,ziek,verlof,reiskosten};
+}
+
+/* ── Render Voorman ── */
+function renderVM() {
+  const afds=byAfd();
+  const tot=DATA.length;
+  const nOk=DATA.filter(m=>getStatus(m.mdwnr)==='ok').length;
+  const nC =DATA.filter(m=>getStatus(m.mdwnr)==='corr').length;
+  const nO =DATA.filter(m=>getStatus(m.mdwnr)==='open').length;
+
+  let h=`
+    <div class="toolbar">
+      <h2>Weekoverzicht medewerkers</h2>
+      <span class="period-label">${PERIODE}</span>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="lbl">Medewerkers</div><div class="val">${tot}</div></div>
+      <div class="stat-card open"><div class="lbl">Open</div><div class="val">${nO}</div></div>
+      <div class="stat-card corr"><div class="lbl">Gecorrigeerd</div><div class="val">${nC}</div></div>
+      <div class="stat-card ok"><div class="lbl">Akkoord</div><div class="val">${nOk}</div></div>
+    </div>`;
+
+  for (const [afd,mdws] of Object.entries(afds)) {
+    const afdOk=mdws.filter(m=>getStatus(m.mdwnr)==='ok').length;
+    const allOk=afdOk===mdws.length;
+
+    h+=`<div class="table-card">
+      <div class="card-hdr">
+        <span class="dept-badge">${afd}</span>
+        <h3>${mdws.length} medewerker${mdws.length!==1?'s':''}</h3>
+        <span style="font-size:11px;color:#5a6a7e">${afdOk}/${mdws.length} akkoord</span>
+        ${!allOk?`<button class="btn btn-o btn-sm" onclick="approveAfd('${ESC(afd)}')">Afdeling goedkeuren</button>`:''}
+      </div>
+      <div class="tbl-wrap"><table>
+        <thead>
+          <tr class="grp">
+            <th rowspan="2"></th><th rowspan="2"></th><th rowspan="2"></th>
+            <th rowspan="2" class="r">Gepland</th>
+            <th colspan="2" class="sl">Tijdstip</th>
+            <th rowspan="2" class="r sl">Gepresteerd<br><span style="font-weight:400;font-size:9px">(saldo)</span></th>
+            <th rowspan="2" class="r sl">Dagsaldo</th>
+            <th colspan="4" class="sl">Overwerk</th>
+            <th colspan="2" class="sl">Absentie (invullen)</th>
+            <th rowspan="2" class="sl">Reiskosten (€)</th>
+            <th rowspan="2" class="sl">Opmerking</th>
+            <th rowspan="2">Status</th>
+          </tr>
+          <tr class="cols">
+            <th class="c sl">In</th><th class="c">Uit</th>
+            <th class="r sl">100%</th><th class="r">125%</th><th class="r">150%</th><th class="r">200%</th>
+            <th class="r sl">Ziek (u)</th><th class="r">Verlof (u)</th>
+          </tr>
+        </thead>
+        <tbody>`;
+
+    mdws.forEach(m=>{
+      const approved=APPR[m.mdwnr];
+      const status=getStatus(m.mdwnr);
+      const note=getNote(m.mdwnr);
+      const rs=m.dagen.length+1;
+
+      m.dagen.forEach((dag,di)=>{
+        const isFirst=di===0;
+        const c=getC(m.mdwnr,dag.datum);
+
+        // Gepresteerd
+        const gepOrig=dag.gep;
+        const gepVal =c.gepresteerd!==undefined?c.gepresteerd:gepOrig;
+        const isCorrGep=c.gepresteerd!==undefined && gepOrig!==null && Math.abs(gepVal-gepOrig)>0.001;
+
+        // Dagsaldo herberekend
+        const dagsaldo=(gepVal!==null&&dag.gepland!==null)?gepVal-dag.gepland:null;
+
+        // Tijdstip-in laat?
+        const laat=isLaat(dag.tijdIn);
+
+        // Waarden overwerk + absentie
+        const ow100=c.ow100 !==undefined?c.ow100 :(dag.ow100 ||0);
+        const ow125=c.ow125 !==undefined?c.ow125 :(dag.ow125 ||0);
+        const ow150=c.ow150 !==undefined?c.ow150 :0;
+        const ow200=c.ow200 !==undefined?c.ow200 :0;
+        const ziek =c.ziek  !==undefined?c.ziek  :(dag.ziek  ||0);
+        const verl =c.verlof!==undefined?c.verlof:(dag.verlof||0);
+
+        h+=`<tr>`;
+
+        if (isFirst) {
+          h+=`<td rowspan="${rs}" style="font-weight:600;vertical-align:top;padding-top:9px;white-space:nowrap">${m.mdwnr}</td>`;
+          h+=`<td rowspan="${rs}" style="font-weight:500;vertical-align:top;padding-top:9px;white-space:nowrap">${m.naam}</td>`;
+        }
+
+        h+=`<td style="color:#5a6a7e;white-space:nowrap">${dag.datum}</td>`;
+        h+=`<td class="r" data-col="gepland" data-val="${dag.gepland??''}">${F(dag.gepland)}</td>`;
+
+        // Tijdstip In — rood als na 07:00
+        h+=`<td class="c sl" style="white-space:nowrap">`;
+        if (laat) h+=`<span class="time-laat" title="Tijdstip in na 07:00!">${toHHMM(dag.tijdIn)} ⚠</span>`;
+        else      h+=toHHMM(dag.tijdIn);
+        h+=`</td>`;
+
+        // Tijdstip Uit
+        h+=`<td class="c">${toHHMM(dag.tijdUit)}</td>`;
+
+        // Gepresteerd (saldo) — bewerkbaar
+        if (approved) {
+          h+=`<td class="r sl">${F(gepVal)}</td>`;
+        } else {
+          h+=`<td class="sl" style="padding:4px 6px">
+            <input type="text" class="ci${isCorrGep?' red':''}"
+              value="${gepVal!==null?F(gepVal):''}"
+              data-mdwnr="${m.mdwnr}" data-datum="${dag.datum}"
+              data-origval="${gepOrig!==null?gepOrig:''}"
+              onchange="onGep(this)" title="Saldo aanpassen">
+          </td>`;
+        }
+
+        // Dagsaldo
+        h+=`<td class="r sl${dagsaldo!==null&&dagsaldo<0?' neg':''}" data-col="dagsaldo">${F(dagsaldo)}</td>`;
+
+        // Overwerk: 100 / 125 / 150 / 200
+        [{key:'ow100',val:ow100,sl:true},{key:'ow125',val:ow125,sl:false},{key:'ow150',val:ow150,sl:false},{key:'ow200',val:ow200,sl:false}]
+        .forEach(f=>{
+          if (approved) {
+            h+=`<td class="r${f.sl?' sl':''}">${f.val>0?F(f.val):'—'}</td>`;
+          } else {
+            h+=`<td class="${f.sl?'sl':''}" style="padding:4px 6px">
+              <input type="text" class="ui${f.val>0?' hv':''}"
+                value="${f.val>0?F(f.val):''}" placeholder="0"
+                data-mdwnr="${m.mdwnr}" data-datum="${dag.datum}" data-field="${f.key}"
+                onchange="onUren(this)">
+            </td>`;
+          }
+        });
+
+        // Absentie: ziek / verlof — in te vullen door voorman
+        [{key:'ziek',val:ziek,sl:true},{key:'verlof',val:verl,sl:false}]
+        .forEach(f=>{
+          if (approved) {
+            h+=`<td class="r${f.sl?' sl':''}">${f.val>0?F(f.val):'—'}</td>`;
+          } else {
+            h+=`<td class="${f.sl?'sl':''}" style="padding:4px 6px">
+              <input type="text" class="ui${f.val>0?' hv':''}"
+                value="${f.val>0?F(f.val):''}" placeholder="0"
+                data-mdwnr="${m.mdwnr}" data-datum="${dag.datum}" data-field="${f.key}"
+                onchange="onUren(this)">
+            </td>`;
+          }
+        });
+
+        // Reiskosten — ingevoerd door medewerker, zichtbaar voor voorman
+        const reisk=c.reiskosten!==undefined?c.reiskosten:0;
+        if (approved) {
+          h+=`<td class="r sl">${reisk>0?'€ '+F(reisk):'—'}</td>`;
+        } else {
+          h+=`<td class="sl" style="padding:4px 6px">
+            <input type="text" class="ui${reisk>0?' hv':''}"
+              value="${reisk>0?F(reisk):''}" placeholder="0,00"
+              data-mdwnr="${m.mdwnr}" data-datum="${dag.datum}" data-field="reiskosten"
+              onchange="onUren(this)">
+          </td>`;
+        }
+
+        // Opmerking + status — rowspan op eerste rij
+        if (isFirst) {
+          h+=`<td rowspan="${rs}" class="sl" style="vertical-align:top;padding-top:6px">
+            ${approved
+              ?`<span style="font-size:11px;color:#5a6a7e">${note||'—'}</span>`
+              :`<textarea class="oi" data-mdwnr="${m.mdwnr}" onchange="onOpm(this)" placeholder="Opmerking...">${note}</textarea>`
+            }
+          </td>`;
+          const bc=status==='ok'?'b-ok':status==='corr'?'b-corr':'b-open';
+          const bt=status==='ok'?'Akkoord':status==='corr'?'Gecorrigeerd':'Open';
+          h+=`<td rowspan="${rs}" style="vertical-align:top;padding-top:6px;white-space:nowrap">
+            <span class="badge status-badge ${bc}" data-mdwnr="${m.mdwnr}">${bt}</span>
+            ${!approved?`<br><button class="btn btn-sm" style="margin-top:6px;background:#e8f5e9;color:#2e7d32;border-color:#a5d6a7" onclick="approveMdw('${m.mdwnr}')">Akkoord ✓</button>`:''}
+          </td>`;
+        }
+        h+=`</tr>`;
+      });
+
+      // Totaalrij
+      const t=calcTot(m);
+      h+=`<tr class="tot" data-mdwnr="${m.mdwnr}">
+        <td colspan="3" style="color:#5a6a7e;font-size:10px">Week totaal</td>
+        <td class="r" data-col="gepland">${F(m.totaal?.gepland)}</td>
+        <td class="c sl">—</td><td class="c">—</td>
+        <td class="r sl" data-col="gepresteerd">${F(t.gep)}</td>
+        <td class="r sl${t.dag<0?' neg':''}" data-col="dagsaldo">${F(t.dag)}</td>
+        <td class="r sl" data-col="ow100">${t.ow100>0?F(t.ow100):'—'}</td>
+        <td class="r" data-col="ow125">${t.ow125>0?F(t.ow125):'—'}</td>
+        <td class="r" data-col="ow150">${t.ow150>0?F(t.ow150):'—'}</td>
+        <td class="r" data-col="ow200">${t.ow200>0?F(t.ow200):'—'}</td>
+        <td class="r sl" data-col="ziek">${t.ziek>0?F(t.ziek):'—'}</td>
+        <td class="r" data-col="verlof">${t.verlof>0?F(t.verlof):'—'}</td>
+        <td class="r sl" data-col="reiskosten">${t.reiskosten>0?'€ '+F(t.reiskosten):'—'}</td>
+        <td></td><td></td>
+      </tr>`;
+    });
+
+    h+=`</tbody></table></div>
+      <div class="approve-bar">
+        <div class="leg">
+          <span style="color:#e65c00;font-weight:700">●</span> Open &nbsp;
+          <span style="color:#1565c0;font-weight:700">●</span> Gecorrigeerd &nbsp;
+          <span style="color:#2e7d32;font-weight:700">●</span> Akkoord &nbsp;
+          <span style="color:#c62828;font-weight:700">⚠</span> Tijdstip in na 07:00
+        </div>
+        <span class="as">Wijzigingen worden automatisch opgeslagen</span>
+        ${allOk
+          ?`<button class="btn btn-s" onclick="sendToHR('${ESC(afd)}')">✉ Doorsturen naar HR</button>`
+          :`<button class="btn btn-p" onclick="approveAll('${ESC(afd)}')">Alles goedkeuren & doorsturen</button>`
+        }
+      </div>
+    </div>`;
+  }
+
+  document.getElementById('vm-content').innerHTML=h;
+}
+
+/* ── Event handlers ── */
+function onGep(el) {
+  const {mdwnr,datum,origval}=el.dataset;
+  const nieuw=parseFloat(el.value.replace(',','.'));
+  if (isNaN(nieuw)) { el.value=origval?F(parseFloat(origval)):''; return; }
+
+  const orig=parseFloat(origval||'0');
+  const corrected=Math.abs(nieuw-orig)>0.001;
+  el.classList.toggle('red', corrected);
+
+  ensC(mdwnr,datum);
+  if (corrected) CORR[mdwnr][datum].gepresteerd=nieuw;
+  else           delete CORR[mdwnr][datum].gepresteerd;
+
+  // Dagsaldo inline
+  const row=el.closest('tr');
+  const gpl=parseFloat(row.querySelector('td[data-col="gepland"]')?.dataset.val||'0');
+  const ds=nieuw-gpl;
+  const dsc=row.querySelector('td[data-col="dagsaldo"]');
+  if (dsc) { dsc.textContent=F(ds); dsc.classList.toggle('neg',ds<0); }
+
+  herbereken(mdwnr);
+  updateBadge(mdwnr);
+}
+
+function onUren(el) {
+  const {mdwnr,datum,field}=el.dataset;
+  const v=parseFloat(el.value.replace(',','.'));
+  const val=isNaN(v)?0:v;
+  el.classList.toggle('hv', val>0);
+  ensC(mdwnr,datum);
+  CORR[mdwnr][datum][field]=val;
+
+  // Validatie overwerk: som mag niet hoger zijn dan dagsaldo
+  if (['ow100','ow125','ow150','ow200'].includes(field)) {
+    const m=DATA.find(x=>x.mdwnr===mdwnr);
+    const dag=m?.dagen.find(d=>d.datum===datum);
+    if (dag) {
+      const c=CORR[mdwnr][datum];
+      const gep=c.gepresteerd!==undefined?c.gepresteerd:(dag.gep||0);
+      const gepland=dag.gepland||0;
+      const dagsaldo=gep-gepland;
+
+      const owSom=(c.ow100||0)+(c.ow125||0)+(c.ow150||0)+(c.ow200||0);
+
+      if (owSom > dagsaldo + 0.001) {
+        // Markeer alle vier ow-velden rood
+        document.querySelectorAll(`input.ui[data-mdwnr="${mdwnr}"][data-datum="${datum}"][data-field^="ow"]`)
+          .forEach(inp => { inp.classList.add('ow-over'); inp.title=`Som overwerk (${F(owSom)}u) overschrijdt dagsaldo (${F(dagsaldo)}u)`; });
+        showOwWarn(mdwnr, datum, `⚠ Overwerk totaal ${F(owSom)}u — dagsaldo is ${F(Math.max(0,dagsaldo))}u`);
+      } else {
+        // Herstel alle vier ow-velden
+        document.querySelectorAll(`input.ui[data-mdwnr="${mdwnr}"][data-datum="${datum}"][data-field^="ow"]`)
+          .forEach(inp => { inp.classList.remove('ow-over'); inp.title=''; });
+        clearOwWarn(mdwnr, datum);
+      }
+    }
+  }
+
+  herbereken(mdwnr);
+  updateBadge(mdwnr);
+}
+
+function showOwWarn(mdwnr, datum, msg) {
+  const id=`ow-warn-${mdwnr}-${datum.replace(/[^0-9]/g,'')}`;
+  let el=document.getElementById(id);
+  if (!el) {
+    // Zoek de rij voor deze datum en voeg een warn-span in na de laatste ow-cel
+    const rows=document.querySelectorAll(`input.ui[data-mdwnr="${mdwnr}"][data-datum="${datum}"][data-field^="ow"]`);
+    if (!rows.length) return;
+    const lastRow=rows[rows.length-1].closest('tr');
+    if (!lastRow) return;
+    el=document.createElement('div');
+    el.id=id;
+    el.style.cssText='position:absolute;background:#c62828;color:#fff;font-size:10px;padding:2px 7px;border-radius:4px;white-space:nowrap;z-index:99;margin-top:2px;pointer-events:none';
+    // Voeg toe als tooltip-achtig element via een td
+    const td=rows[rows.length-1].closest('td');
+    td.style.position='relative';
+    td.appendChild(el);
+  }
+  el.textContent=msg;
+  el.style.display='block';
+}
+
+function clearOwWarn(mdwnr, datum) {
+  const id=`ow-warn-${mdwnr}-${datum.replace(/[^0-9]/g,'')}`;
+  const el=document.getElementById(id);
+  if (el) el.style.display='none';
+}
+
+function onOpm(el) {
+  const {mdwnr}=el.dataset;
+  if (!CORR[mdwnr]) CORR[mdwnr]={};
+  if (!CORR[mdwnr]['__note__']) CORR[mdwnr]['__note__']={};
+  CORR[mdwnr]['__note__'].opmerking=el.value;
+  updateBadge(mdwnr);
+}
+
+function ensC(mdwnr,datum) {
+  if (!CORR[mdwnr]) CORR[mdwnr]={};
+  if (!CORR[mdwnr][datum]) CORR[mdwnr][datum]={};
+}
+
+function herbereken(mdwnr) {
+  const m=DATA.find(x=>x.mdwnr===mdwnr); if (!m) return;
+  const t=calcTot(m);
+  const tr=document.querySelector(`tr.tot[data-mdwnr="${mdwnr}"]`); if (!tr) return;
+  const set=(col,val,dash=false)=>{
+    const td=tr.querySelector(`td[data-col="${col}"]`); if (!td) return;
+    td.textContent=(dash&&val===0)?'—':F(val);
+    if (col==='dagsaldo') td.classList.toggle('neg',val<0);
+  };
+  set('gepresteerd',t.gep);
+  set('dagsaldo',t.dag);
+  set('ow100',t.ow100,true); set('ow125',t.ow125,true);
+  set('ow150',t.ow150,true); set('ow200',t.ow200,true);
+  set('ziek',t.ziek,true);   set('verlof',t.verlof,true);
+  set('reiskosten',t.reiskosten,true);
+}
+
+function updateBadge(mdwnr) {
+  const s=getStatus(mdwnr);
+  const el=document.querySelector(`.status-badge[data-mdwnr="${mdwnr}"]`); if (!el) return;
+  el.className='badge status-badge '+(s==='ok'?'b-ok':s==='corr'?'b-corr':'b-open');
+  el.textContent=s==='ok'?'Akkoord':s==='corr'?'Gecorrigeerd':'Open';
+}
+
+/* ── Goedkeuren ── */
+function approveMdw(mdwnr) { APPR[mdwnr]=true; renderVM(); toast(`Medewerker ${mdwnr} goedgekeurd ✓`); }
+function approveAfd(afd)   { DATA.filter(m=>m.afdeling===afd).forEach(m=>{ APPR[m.mdwnr]=true; }); renderVM(); toast(`Afdeling "${afd}" goedgekeurd ✓`); }
+function approveAll(afd)   { approveAfd(afd); setTimeout(()=>sendToHR(afd),300); }
+
+function sendToHR(afd) {
+  const mdws=DATA.filter(m=>m.afdeling===afd);
+  if (!mdws.every(m=>APPR[m.mdwnr])) {
+    if (!confirm('Niet alle medewerkers zijn goedgekeurd. Toch doorsturen?')) return;
+    mdws.forEach(m=>{ APPR[m.mdwnr]=true; });
+  }
+  toast(`✉ Afdeling "${afd}" doorgestuurd naar HR!`);
+  renderVM();
+}
+
+/* ── HR-overzicht ── */
+function renderHR() {
+  if (!DATA.length) return;
+  const afds=byAfd();
+  let h=`<div class="toolbar"><h2>HR-overzicht — ${PERIODE}</h2></div>`;
+
+  for (const [afd,mdws] of Object.entries(afds)) {
+    const allOk=mdws.every(m=>APPR[m.mdwnr]);
+    h+=`<div class="table-card" style="margin-bottom:20px">
+      <div class="card-hdr">
+        <span class="dept-badge">${afd}</span>
+        <h3>${mdws.length} medewerkers</h3>
+        <span class="badge ${allOk?'b-ok':'b-open'}">${allOk?'Doorgestuurd':'In behandeling'}</span>
+      </div>
+      <div class="tbl-wrap"><table>
+        <thead><tr class="cols">
+          <th>Mdw. nr.</th><th>Naam</th>
+          <th class="r">Gepland</th><th class="r">Gepresteerd</th><th class="r">Dagsaldo</th>
+          <th class="r">OW 100%</th><th class="r">OW 125%</th><th class="r">OW 150%</th><th class="r">OW 200%</th>
+          <th class="r">Ziek</th><th class="r">Verlof</th>
+          <th class="r">Reiskosten (€)</th>
+          <th>Opmerking</th><th>Status</th>
+        </tr></thead><tbody>`;
+
+    mdws.forEach(m=>{
+      const t=calcTot(m);
+      const note=getNote(m.mdwnr);
+      const s=getStatus(m.mdwnr);
+      const bc=s==='ok'?'b-ok':s==='corr'?'b-corr':'b-open';
+      const bt=s==='ok'?'Akkoord':s==='corr'?'Gecorrigeerd':'Open';
+      h+=`<tr>
+        <td>${m.mdwnr}</td><td>${m.naam}</td>
+        <td class="r">${F(m.totaal?.gepland)}</td>
+        <td class="r">${F(t.gep)}</td>
+        <td class="r${t.dag<0?' neg':''}">${F(t.dag)}</td>
+        <td class="r">${t.ow100>0?F(t.ow100):'—'}</td>
+        <td class="r">${t.ow125>0?F(t.ow125):'—'}</td>
+        <td class="r">${t.ow150>0?F(t.ow150):'—'}</td>
+        <td class="r">${t.ow200>0?F(t.ow200):'—'}</td>
+        <td class="r">${t.ziek>0?F(t.ziek):'—'}</td>
+        <td class="r">${t.verlof>0?F(t.verlof):'—'}</td>
+        <td class="r">${t.reiskosten>0?'€ '+F(t.reiskosten):'—'}</td>
+        <td style="font-size:11px;color:#5a6a7e">${note||'—'}</td>
+        <td><span class="badge ${bc}">${bt}</span></td>
+      </tr>`;
+    });
+    h+=`</tbody></table></div></div>`;
+  }
+  document.getElementById('hr-content').innerHTML=h;
+}
+
+/* ── Toast ── */
+function toast(msg) {
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.style.display='block';
+  clearTimeout(el._t); el._t=setTimeout(()=>{ el.style.display='none'; },3000);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HR Dashboard — QBTec Urenregistratie</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<header>
+  <h1>Urenregistratie — HR Dashboard</h1>
+  <div class="hdr-actions">
+    <span id="hdr-period"></span>
+    <button id="logout-btn" class="logout-btn">Uitloggen</button>
+  </div>
+</header>
+
+<div class="nav-tabs" id="nav-tabs" hidden>
+  <button class="tab-btn active" data-tab="overzicht">Overzicht</button>
+  <button class="tab-btn"        data-tab="urenstaat">Urenstaat per afdeling</button>
+</div>
+
+<div class="container">
+
+  <div class="upload-zone-wrap" id="upload-zone-wrap">
+    <div class="upload-zone" id="upload-zone">
+      <div class="icon">📊</div>
+      <strong>Klik om de Immotix Excel te uploaden</strong>
+      <p>Of sleep het bestand hierheen &nbsp;·&nbsp; .xlsx van de vorige werkweek</p>
+      <div class="upload-zone-spinner" id="upload-zone-spinner" hidden>
+        <div class="login-spinner" aria-hidden="true"></div>
+        <p class="login-loading-text">Excel verwerken…</p>
+      </div>
+    </div>
+    <div class="upload-error" id="upload-error" hidden></div>
+  </div>
+  <input type="file" id="file-input" accept=".xlsx,.xls">
+
+  <div class="periode-info-bar" id="periode-info-bar" hidden>
+    <div class="periode-info-text">
+      <strong id="periode-info-label"></strong>
+      <span id="periode-info-status" class="badge"></span>
+    </div>
+    <div class="spacer"></div>
+    <button id="btn-emails" class="btn btn-o btn-sm" type="button" hidden>✉ Verstuur weekmail</button>
+    <button id="btn-nmbrs"  class="btn btn-p btn-sm" type="button">📥 Exporteer naar NMBRS</button>
+    <button id="btn-sluit"  class="btn btn-s btn-sm" type="button" hidden>🔒 Sluit periode</button>
+  </div>
+
+  <div id="tab-overzicht">
+    <div id="hr-content">
+      <div class="empty"><div class="icon">📂</div><p>Upload eerst de Immotix Excel.</p></div>
+    </div>
+  </div>
+  <div id="tab-urenstaat" hidden>
+    <div id="vm-content">
+      <div class="empty"><div class="icon">📂</div><p>Geen urenstaat beschikbaar.</p></div>
+    </div>
+  </div>
+</div>
+
+<div class="upload-overlay" id="upload-overlay" hidden>
+  <div class="login-spinner" aria-hidden="true"></div>
+  <p class="login-loading-text" id="upload-overlay-text">Bezig…</p>
+</div>
+
+<div id="toast"></div>
+
+<script type="module" src="assets/hr.js"></script>
+</body>
+</html>

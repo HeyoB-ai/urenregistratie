@@ -1,0 +1,22 @@
+{
+  "name": "urenregistratie",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Urenregistratie portaal — wekelijkse Immotix import + voorman goedkeuring",
+  "type": "module",
+  "scripts": {
+    "dev": "netlify dev",
+    "build": "echo \"Static site, no build step\""
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "busboy": "^1.6.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "netlify-cli": "^17.36.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

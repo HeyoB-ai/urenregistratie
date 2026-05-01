@@ -1,0 +1,230 @@
+/* === Login pagina's (index.html, auth-callback.html) ===
+   Dashboard stijlen worden in stap 6 hieronder geappend uit het prototype. */
+
+.login-page {
+  margin: 0;
+  min-height: 100vh;
+  background: #f4f5f7;
+  font-family: Arial, sans-serif;
+  color: #1a3a5c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.login-card {
+  background: #fff;
+  border: 1px solid #dde2ea;
+  border-radius: 10px;
+  padding: 40px 32px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  box-sizing: border-box;
+}
+
+.login-logo {
+  display: block;
+  max-width: 160px;
+  height: auto;
+  margin: 0 auto 24px;
+}
+
+.login-title {
+  font-size: 20px;
+  font-weight: 600;
+  text-align: center;
+  margin: 0 0 28px;
+  color: #1a3a5c;
+}
+
+.login-field {
+  margin-bottom: 16px;
+}
+
+.login-field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #1a3a5c;
+}
+
+.login-field input[type="email"] {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #dde2ea;
+  border-radius: 6px;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  box-sizing: border-box;
+  color: #1a3a5c;
+}
+
+.login-field input[type="email"]:focus {
+  outline: none;
+  border-color: #1a3a5c;
+  box-shadow: 0 0 0 2px rgba(26, 58, 92, 0.15);
+}
+
+.login-button {
+  width: 100%;
+  padding: 12px;
+  background: #1a3a5c;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.login-button:hover { background: #14304b; }
+.login-button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.login-message {
+  margin-top: 20px;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.login-message.success {
+  background: #e8f4ee;
+  color: #1f6f43;
+  border: 1px solid #c4e3d2;
+}
+
+.login-message.error {
+  background: #fdecec;
+  color: #a02525;
+  border: 1px solid #f1c6c6;
+}
+
+.login-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #dde2ea;
+  border-top-color: #1a3a5c;
+  border-radius: 50%;
+  margin: 0 auto 16px;
+  animation: login-spin 0.8s linear infinite;
+}
+
+@keyframes login-spin {
+  to { transform: rotate(360deg); }
+}
+
+.login-loading-text {
+  text-align: center;
+  font-size: 14px;
+  color: #1a3a5c;
+  margin: 0;
+}
+
+/* === Dashboard stijlen (1-op-1 uit prototype/urenregistratie.html) === */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;font-size:14px;background:#f4f5f7;color:#1a1a2e;min-height:100vh}
+header{background:#1a3a5c;color:#fff;padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between}
+header h1{font-size:16px;font-weight:600}
+header span{font-size:12px;opacity:.7}
+.nav-tabs{background:#fff;border-bottom:1px solid #dde2ea;padding:0 24px;display:flex}
+.tab-btn{padding:12px 20px;border:none;background:transparent;font-size:13px;color:#5a6a7e;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:Arial,sans-serif}
+.tab-btn.active{color:#1a3a5c;border-bottom-color:#1a3a5c;font-weight:600}
+.tab-btn:hover:not(.active){background:#f4f5f7}
+.container{padding:20px 24px;max-width:1800px}
+.upload-zone{border:2px dashed #b0bec5;border-radius:10px;padding:48px 24px;text-align:center;background:#fff;cursor:pointer;transition:border-color .2s,background .2s;margin-bottom:24px}
+.upload-zone:hover,.upload-zone.drag{border-color:#1a3a5c;background:#f0f4f8}
+.upload-zone p{color:#5a6a7e;margin-top:8px;font-size:13px}
+.upload-zone .icon{font-size:36px;margin-bottom:8px}
+#file-input{display:none}
+.toolbar{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.toolbar h2{font-size:15px;font-weight:600;color:#1a1a2e;flex:1}
+.period-label{font-size:12px;background:#e8eef5;color:#1a3a5c;padding:4px 10px;border-radius:4px;font-weight:500}
+.stats-row{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.stat-card{background:#fff;border:1px solid #dde2ea;border-radius:8px;padding:12px 16px;min-width:110px}
+.stat-card .lbl{font-size:11px;color:#5a6a7e;margin-bottom:4px}
+.stat-card .val{font-size:20px;font-weight:600;color:#1a1a2e}
+.stat-card.open .val{color:#e65c00}
+.stat-card.ok .val{color:#2e7d32}
+.stat-card.corr .val{color:#1565c0}
+.table-card{background:#fff;border:1px solid #dde2ea;border-radius:10px;overflow:hidden;margin-bottom:20px}
+.card-hdr{padding:12px 16px;border-bottom:1px solid #dde2ea;display:flex;align-items:center;gap:10px;background:#f8f9fb}
+.card-hdr h3{font-size:13px;font-weight:600;color:#1a1a2e;flex:1}
+.dept-badge{font-size:11px;padding:3px 9px;border-radius:4px;background:#e8eef5;color:#1a3a5c;font-weight:500}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead tr.grp th{background:#eef1f6;padding:5px 8px;text-align:center;font-size:10px;font-weight:700;color:#1a3a5c;letter-spacing:.4px;border-bottom:1px solid #dde2ea;text-transform:uppercase;white-space:nowrap}
+thead tr.cols th{background:#f4f5f7;padding:7px 8px;font-weight:600;font-size:11px;color:#5a6a7e;border-bottom:1px solid #dde2ea;white-space:nowrap}
+thead tr.cols th.r{text-align:right}
+thead tr.cols th.c{text-align:center}
+.sl{border-left:2px solid #c8d4e0!important}
+tbody td{padding:6px 8px;border-bottom:1px solid #f0f2f5;vertical-align:middle;color:#1a1a2e}
+tbody td.r{text-align:right;font-variant-numeric:tabular-nums}
+tbody td.c{text-align:center}
+tbody tr:hover td{background:#f8f9fb}
+tbody tr.tot td{background:#f0f4f8;font-weight:600;border-top:1px solid #c8d4e0;color:#1a3a5c;font-size:11px}
+.badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:4px;font-weight:600;letter-spacing:.3px;white-space:nowrap}
+.b-ok{background:#e8f5e9;color:#2e7d32}
+.b-open{background:#fff3e0;color:#e65c00}
+.b-corr{background:#e3f2fd;color:#1565c0}
+.neg{color:#c62828}
+.time-laat{color:#c62828;font-weight:700}
+input.ci{width:50px;padding:3px 4px;border:1px solid #90a4ae;border-radius:4px;font-size:11px;text-align:right;background:#fff;font-family:Arial,sans-serif;color:#1a1a2e}
+input.ci:focus{outline:none;border-color:#1a3a5c}
+input.ci.red{background:#ffebee;border-color:#e53935;color:#b71c1c;font-weight:700}
+input.ui{width:44px;padding:3px 4px;border:1px solid #c8d4e0;border-radius:4px;font-size:11px;text-align:right;background:#fff;font-family:Arial,sans-serif;color:#1a1a2e}
+input.ui:focus{outline:none;border-color:#1a3a5c;background:#f0f4ff}
+input.ui.hv{background:#fff8e1;border-color:#f9a825}
+textarea.oi{width:130px;padding:3px 5px;border:1px solid #dde2ea;border-radius:4px;font-size:11px;resize:none;height:28px;font-family:Arial,sans-serif;color:#1a1a2e;background:#fff}
+input.ui.ow-over{background:#ffebee!important;border-color:#e53935!important;color:#b71c1c!important;font-weight:700}
+textarea.oi:focus{outline:none;border-color:#1a3a5c}
+.btn{padding:7px 14px;border-radius:5px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid transparent;font-family:Arial,sans-serif;transition:opacity .15s}
+.btn:hover{opacity:.85}
+.btn-p{background:#1a3a5c;color:#fff;border-color:#1a3a5c}
+.btn-s{background:#2e7d32;color:#fff;border-color:#2e7d32}
+.btn-o{background:#fff;color:#1a3a5c;border-color:#1a3a5c}
+.btn-sm{padding:4px 10px;font-size:11px}
+.approve-bar{display:flex;align-items:center;gap:12px;padding:10px 16px;border-top:1px solid #dde2ea;background:#f8f9fb;flex-wrap:wrap}
+.approve-bar .leg{font-size:11px;color:#5a6a7e;display:flex;gap:14px;flex:1;flex-wrap:wrap;align-items:center}
+.approve-bar .as{font-size:11px;color:#90a4ae}
+.empty{text-align:center;padding:60px 24px;color:#5a6a7e}
+.empty .icon{font-size:40px;margin-bottom:12px}
+#toast{position:fixed;bottom:24px;right:24px;background:#2e7d32;color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:500;display:none;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+
+/* === Header logout / utility knoppen === */
+.hdr-actions { display:flex; align-items:center; gap:14px }
+.hdr-actions .logout-btn { background:transparent; border:1px solid rgba(255,255,255,.4); color:#fff; padding:5px 12px; border-radius:4px; font-size:12px; cursor:pointer; font-family:Arial,sans-serif }
+.hdr-actions .logout-btn:hover { background:rgba(255,255,255,.1) }
+
+/* === Periode info-bar (HR dashboard) === */
+.periode-info-bar { display:flex; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap; padding:10px 14px; background:#fff; border:1px solid #dde2ea; border-radius:8px }
+.periode-info-bar .periode-info-text { display:flex; align-items:center; gap:10px; font-size:13px; color:#1a1a2e }
+.periode-info-bar .periode-info-text strong { color:#1a3a5c }
+.periode-info-bar .spacer { flex:1 }
+.periode-info-bar[hidden] { display:none }
+
+/* === Upload-zone spinner (in-zone overlay) + foutmelding === */
+.upload-zone { position:relative }
+.upload-zone-spinner { position:absolute; inset:0; background:rgba(255,255,255,.92); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:10px; border-radius:10px; z-index:5 }
+.upload-zone-spinner[hidden] { display:none }
+.upload-error { padding:10px 14px; margin-top:8px; background:#fdecec; border:1px solid #e53935; color:#a02525; border-radius:6px; font-size:13px; font-weight:500 }
+.upload-error[hidden] { display:none }
+.upload-zone-wrap[hidden] { display:none }
+
+/* === Upload overlay === */
+.upload-overlay { position:fixed; inset:0; z-index:9998; background:rgba(244,245,247,.92); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:12px }
+.upload-overlay[hidden] { display:none }
+
+/* === Deadline waarschuwingsbalk (voorman) === */
+.deadline-bar { padding:12px 16px; margin-bottom:16px; border-radius:6px; font-size:13px; font-weight:500; line-height:1.45; display:flex; align-items:center; gap:10px }
+.deadline-bar .icon { font-size:18px; flex-shrink:0 }
+.deadline-bar.info    { background:#e8eef5; border:1px solid #c8d4e0; color:#1a3a5c }
+.deadline-bar.warning { background:#fff8e1; border:1px solid #f9a825; color:#875900 }
+.deadline-bar.passed  { background:#fdecec; border:1px solid #e53935; color:#a02525 }
+.deadline-bar[hidden] { display:none }

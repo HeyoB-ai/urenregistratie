@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Inloggen… — QBTec Urenregistratie</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body class="login-page">
+  <main class="login-card">
+    <div class="login-spinner" aria-hidden="true"></div>
+    <p class="login-loading-text">Inloggen…</p>
+    <div id="login-message" class="login-message error" hidden></div>
+  </main>
+
+  <script type="module">
+    import { supabase } from './assets/supabase.js'
+    import { checkAuthAndRedirect } from './assets/auth.js'
+
+    const message = document.getElementById('login-message')
+    let done = false
+
+    function showError(text) {
+      message.textContent = text
+      message.hidden = false
+    }
+
+    async function finish() {
+      if (done) return
+      done = true
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        await checkAuthAndRedirect()
+      } else {
+        showError('Inloglink ongeldig of verlopen. Vraag een nieuwe link aan via de loginpagina.')
+      }
+    }
+
+    supabase.auth.onAuthStateChange((_event, session) => {
+      if (session && !done) finish()
+    })
+
+    setTimeout(finish, 2000)
+  </script>
+</body>
+</html>
