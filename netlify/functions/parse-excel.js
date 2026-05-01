@@ -70,9 +70,15 @@ export const handler = async (event) => {
     const wb = XLSX.read(buf, { type: 'buffer', cellDates: true })
     const ws = wb.Sheets[wb.SheetNames[0]]
     if (!ws) throw new Error('Werkblad ontbreekt')
+    console.log('[parse-excel] Bytes ontvangen:', buf.length, '— sheets:', wb.SheetNames)
     const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: true })
+    console.log('[parse-excel] Aantal rijen:', rows.length)
+    for (let i = 0; i < Math.min(5, rows.length); i++) {
+      console.log(`[parse-excel] Rij ${i}:`, JSON.stringify(rows[i]))
+    }
     parsed = parseImmotix(rows)
   } catch (e) {
+    console.error('[parse-excel] Parse fout:', e.message)
     return text(422, e.message || String(e))
   }
 
@@ -136,18 +142,37 @@ function parseMultipart(event) {
 function parseImmotix(rows) {
   if (!rows || !rows.length) throw new Error('Leeg bestand')
 
-  // Header met "Selectie: 23-03-2026 t/m 29-03-2026"
-  const title = rows[0] ? String(rows[0][0] ?? '') : ''
-  const pm = title.match(/Selectie:\s*(.+)/i)
-  if (!pm) {
-    throw new Error('Kan periode niet bepalen uit bestandsnaam — controleer of dit een geldig Immotix bestand is.')
+  // Zoek "Selectie: ..." in eerste 10 rijen × 5 kolommen (fallback voor andere lay-out / merged cells)
+  let label = null
+  let labelFoundAt = null
+  outer: for (let i = 0; i < Math.min(10, rows.length); i++) {
+    const r = rows[i] || []
+    for (let j = 0; j < Math.min(5, r.length); j++) {
+      const v = String(r[j] ?? '')
+      const m = v.match(/Selectie:\s*(.+)/i)
+      if (m) {
+        label = m[1].trim()
+        labelFoundAt = `rij ${i}, kolom ${j}`
+        break outer
+      }
+    }
   }
-  const label = pm[1].trim()
+  console.log('[parse-excel] "Selectie:" gevonden op:', labelFoundAt, '→ label:', label)
+
+  if (!label) {
+    const peek = JSON.stringify(rows.slice(0, 3))
+    throw new Error(
+      'Kan periode niet bepalen uit bestandsnaam — controleer of dit een geldig Immotix bestand is. ' +
+      `(debug: eerste 3 rijen = ${peek.slice(0, 400)})`
+    )
+  }
 
   // Eerste datum uit het label voor week + jaar
   const dm = label.match(/(\d{1,2})-(\d{1,2})-(\d{4})/)
   if (!dm) {
-    throw new Error('Kan periode niet bepalen uit bestandsnaam — controleer of dit een geldig Immotix bestand is.')
+    throw new Error(
+      `Kan periode niet bepalen uit bestandsnaam — geen datum gevonden in label '${label}'.`
+    )
   }
   const startDate = makeDateUTC(+dm[1], +dm[2], +dm[3])
   if (!startDate) {
