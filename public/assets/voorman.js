@@ -1,6 +1,6 @@
 import { supabase } from './supabase.js'
 import { checkAuthAndRedirect, logout } from './auth.js'
-import { renderVM, deadlineFor, formatDeadline, toast } from './render.js'
+import { renderVM, toast } from './render.js'
 import { bindCorrectionHandlers } from './corrections.js'
 
 const user = await checkAuthAndRedirect()
@@ -30,8 +30,6 @@ async function init() {
   })
   await laadHuidigePeriode()
   abonneerRealtime()
-  // Update de deadline-balk elke minuut zodat hij na vrijdag 17:00 vanzelf rood wordt
-  setInterval(updateDeadlineBar, 60_000)
 }
 
 function bindUI() {
@@ -79,7 +77,6 @@ function showLeegState() {
   cache = { periode: null, data: [], goedkeuringen: {} }
   $('vm-content').innerHTML =
     `<div class="empty"><div class="icon">✅</div><p>Er zijn momenteel geen openstaande perioden.</p></div>`
-  $('deadline-bar').hidden = true
   $('hdr-period').textContent = ''
 }
 
@@ -104,7 +101,6 @@ async function laadPeriodeData(periode_id) {
 
   cache = { periode, data, goedkeuringen }
   renderVM(data, periode, { goedkeuringen, approvedMdws })
-  updateDeadlineBar()
 }
 
 // === Transform: Supabase rijen -> prototype-formaat ===
@@ -194,7 +190,6 @@ async function sendHR(afdId, afdNaam) {
 
   cache.goedkeuringen[afdId] = true
   rerender()
-  updateDeadlineBar()
   toast(`✉ Afdeling "${afdNaam || ''}" doorgestuurd naar HR`)
 }
 
@@ -203,37 +198,6 @@ function rerender() {
     goedkeuringen: cache.goedkeuringen,
     approvedMdws
   })
-}
-
-// === Deadline-balk ===
-
-function updateDeadlineBar() {
-  const bar = $('deadline-bar')
-  const text = $('deadline-text')
-  if (!bar || !text) return
-
-  const periode = cache.periode
-  if (!periode || periode.status !== 'open') {
-    bar.hidden = true
-    return
-  }
-  // Verberg wanneer de afdeling al is doorgestuurd naar HR
-  const afdIds = [...new Set(cache.data.map((m) => m.afdeling_id).filter(Boolean))]
-  const allOk = afdIds.length > 0 && afdIds.every((id) => cache.goedkeuringen[id])
-  if (allOk) { bar.hidden = true; return }
-
-  const deadline = deadlineFor(periode)
-  if (!deadline) { bar.hidden = true; return }
-
-  const now = new Date()
-  bar.hidden = false
-  if (now > deadline) {
-    bar.className = 'deadline-bar passed'
-    text.innerHTML = `<span class="icon" aria-hidden="true">✕</span> Deadline verstreken — neem contact op met HR`
-  } else {
-    bar.className = 'deadline-bar info'
-    text.innerHTML = `<span class="icon" aria-hidden="true">⏰</span> Deadline: ${formatDeadline(deadline)}`
-  }
 }
 
 // === Realtime: live status updates van andere voormannen / HR ===

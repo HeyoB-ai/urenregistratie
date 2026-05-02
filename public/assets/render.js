@@ -61,28 +61,6 @@ export function getNote(m) {
   return dag ? dag.opmerking : ''
 }
 
-// Deadline = vrijdag 17:00 van de week waarin de Excel is geüpload
-export function deadlineFor(periode) {
-  if (!periode || !periode.uploaded_at) return null
-  const uploaded = new Date(periode.uploaded_at)
-  const dow = uploaded.getDay() // 0 = zo, 1 = ma, ..., 5 = vr, 6 = za
-  const daysToFriday = ((5 - dow) + 7) % 7
-  const friday = new Date(uploaded)
-  friday.setDate(uploaded.getDate() + daysToFriday)
-  friday.setHours(17, 0, 0, 0)
-  if (friday < uploaded) friday.setDate(friday.getDate() + 7)
-  return friday
-}
-
-// Toon NL-formaat datum
-export function formatDeadline(d) {
-  if (!d) return ''
-  const dagen = ['zondag', 'maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag']
-  const hh = String(d.getHours()).padStart(2, '0')
-  const mm = String(d.getMinutes()).padStart(2, '0')
-  return `${dagen[d.getDay()]} ${d.getDate()}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()} ${hh}:${mm}`
-}
-
 function isAfdGoedgekeurd(afdeling_id, opts) {
   return !!(opts.goedkeuringen && opts.goedkeuringen[afdeling_id])
 }
