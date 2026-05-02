@@ -62,6 +62,17 @@ function bindUI() {
   $('btn-sluit').addEventListener('click', sluitPeriode)
   $('btn-nmbrs').addEventListener('click', exportNMBRS)
   $('btn-emails').addEventListener('click', verstuurWeekmail)
+
+  // Leidinggevenden tab
+  $('lg-form').addEventListener('submit', voegLeidinggevendeToe)
+  $('lg-tbody').addEventListener('change', async (e) => {
+    const cb = e.target.closest('input[type="checkbox"][data-action="toggle-reserve"]')
+    if (cb) await toggleReserve(cb)
+  })
+  $('lg-tbody').addEventListener('click', async (e) => {
+    const btn = e.target.closest('button[data-action="delete-lg"]')
+    if (btn) await verwijderLeidinggevende(btn.dataset.id, btn.dataset.naam)
+  })
 }
 
 function switchTab(name) {
@@ -69,10 +80,14 @@ function switchTab(name) {
   document.querySelectorAll('.tab-btn').forEach((b) => {
     b.classList.toggle('active', b.dataset.tab === name)
   })
-  $('tab-overzicht').hidden = name !== 'overzicht'
-  $('tab-urenstaat').hidden = name !== 'urenstaat'
-  // Hertekenen om er zeker van te zijn dat de actieve tab actuele state heeft
-  if (cache.periode) renderActiveTab()
+  $('tab-overzicht').hidden       = name !== 'overzicht'
+  $('tab-urenstaat').hidden       = name !== 'urenstaat'
+  $('tab-leidinggevenden').hidden = name !== 'leidinggevenden'
+  if (name === 'leidinggevenden') {
+    laadLeidinggevenden()
+  } else if (cache.periode) {
+    renderActiveTab()
+  }
 }
 
 // === Periode laden — alleen meest recente met status='open' ===
@@ -377,6 +392,173 @@ function exportNMBRS() {
 function round2(n) {
   if (n === null || n === undefined || isNaN(n)) return 0
   return Math.round(Number(n) * 100) / 100
+}
+
+// === Leidinggevenden tab ===
+
+let afdelingenCache = []
+let leidinggevendenCache = []
+
+async function laadLeidinggevenden() {
+  const [afdR, lgR] = await Promise.all([
+    supabase.from('afdelingen').select('id, naam').order('naam'),
+    supabase.from('leidinggevenden')
+      .select('id, naam, email, afdeling_id, is_reserve, user_id, afdelingen(naam)')
+      .order('naam')
+  ])
+  if (afdR.error) { toast('Afdelingen laden mislukt: ' + afdR.error.message); return }
+  if (lgR.error)  { toast('Leidinggevenden laden mislukt: ' + lgR.error.message); return }
+
+  afdelingenCache = afdR.data || []
+  leidinggevendenCache = lgR.data || []
+  vulAfdelingDropdown()
+  renderLeidinggevendenTabel()
+}
+
+function vulAfdelingDropdown() {
+  const sel = $('lg-afdeling')
+  const huidige = sel.value
+  sel.innerHTML = '<option value="">— kies —</option>' +
+    afdelingenCache.map((a) => `<option value="${a.id}">${escapeHtml(a.naam)}</option>`).join('')
+  if (huidige) sel.value = huidige
+}
+
+function renderLeidinggevendenTabel() {
+  const tbody = $('lg-tbody')
+  if (!leidinggevendenCache.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty" style="padding:24px">Nog geen leidinggevenden toegevoegd.</td></tr>'
+    return
+  }
+  tbody.innerHTML = leidinggevendenCache.map((lg) => {
+    const afd = lg.afdelingen?.naam || '—'
+    const isActief = !!lg.user_id
+    const sql = activatieSQL(lg.email)
+    const statusBadge = isActief
+      ? '<span class="badge b-ok">Actief</span>'
+      : `<span class="badge b-open" title="${escapeAttr(sql)}" style="cursor:help">Uitgenodigd</span>`
+    return `<tr>
+      <td>${escapeHtml(lg.naam)}</td>
+      <td>${escapeHtml(lg.email)}</td>
+      <td>${escapeHtml(afd)}</td>
+      <td class="c">
+        <input type="checkbox" data-action="toggle-reserve" data-id="${lg.id}" ${lg.is_reserve ? 'checked' : ''}>
+        <span class="lg-saved" data-id="${lg.id}" style="color:#2e7d32;font-weight:700;margin-left:6px;display:none">✓</span>
+      </td>
+      <td>${statusBadge}</td>
+      <td class="c">
+        <button class="btn btn-sm" data-action="delete-lg" data-id="${lg.id}" data-naam="${escapeAttr(lg.naam)}"
+          style="background:#fdecec;color:#a02525;border:1px solid #e53935">Verwijderen</button>
+      </td>
+    </tr>`
+  }).join('')
+}
+
+function activatieSQL(email) {
+  const e = String(email).replace(/'/g, "''")
+  return `UPDATE leidinggevenden SET user_id = (SELECT id FROM auth.users WHERE email = '${e}') WHERE email = '${e}';`
+}
+
+async function voegLeidinggevendeToe(e) {
+  e.preventDefault()
+  const naam        = $('lg-naam').value.trim()
+  const email       = $('lg-email').value.trim()
+  const afdeling_id = $('lg-afdeling').value
+  const is_reserve  = $('lg-reserve').checked
+  const submit      = $('lg-submit')
+  const msg         = $('lg-form-msg')
+
+  if (!naam || !email || !afdeling_id) {
+    showFormMsg('error', 'Vul naam, e-mail en afdeling in.')
+    return
+  }
+
+  submit.disabled = true
+  submit.textContent = 'Bezig…'
+  msg.hidden = true
+
+  // Stap 1: INSERT
+  const { error: insErr } = await supabase.from('leidinggevenden').insert({
+    naam, email, afdeling_id, is_reserve
+  })
+  if (insErr) {
+    showFormMsg('error', 'Toevoegen mislukt: ' + insErr.message)
+    submit.disabled = false
+    submit.textContent = 'Toevoegen & uitnodigen'
+    return
+  }
+
+  // Stap 2: invite via Netlify function
+  let inviteFout = null
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    const resp = await fetch('/.netlify/functions/invite-user', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email, naam })
+    })
+    const text = await resp.text()
+    if (!resp.ok) inviteFout = text || `HTTP ${resp.status}`
+  } catch (err) {
+    inviteFout = err.message || String(err)
+  }
+
+  if (inviteFout) {
+    showFormMsg('error', `Toegevoegd, maar uitnodigen mislukt: ${inviteFout}`)
+  } else {
+    showFormMsg('success', `Uitnodiging verstuurd naar ${email}`)
+    $('lg-form').reset()
+  }
+
+  submit.disabled = false
+  submit.textContent = 'Toevoegen & uitnodigen'
+  await laadLeidinggevenden()
+}
+
+function showFormMsg(type, text) {
+  const msg = $('lg-form-msg')
+  msg.className = 'login-message ' + type
+  msg.textContent = text
+  msg.hidden = false
+}
+
+async function toggleReserve(cb) {
+  const id = cb.dataset.id
+  const checked = cb.checked
+  cb.disabled = true
+  const { error } = await supabase.from('leidinggevenden').update({ is_reserve: checked }).eq('id', id)
+  cb.disabled = false
+  if (error) {
+    cb.checked = !checked
+    toast('Opslaan mislukt: ' + error.message)
+    return
+  }
+  const lg = leidinggevendenCache.find((x) => x.id === id)
+  if (lg) lg.is_reserve = checked
+  const tick = document.querySelector(`.lg-saved[data-id="${id}"]`)
+  if (tick) {
+    tick.style.display = 'inline'
+    setTimeout(() => { tick.style.display = 'none' }, 2000)
+  }
+}
+
+async function verwijderLeidinggevende(id, naam) {
+  if (!confirm(`Weet u zeker dat u "${naam}" wilt verwijderen? De auth-account blijft bestaan en moet apart in Supabase worden verwijderd.`)) return
+  const { error } = await supabase.from('leidinggevenden').delete().eq('id', id)
+  if (error) { toast('Verwijderen mislukt: ' + error.message); return }
+  toast(`"${naam}" verwijderd`)
+  await laadLeidinggevenden()
+}
+
+function escapeHtml(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+}
+function escapeAttr(s) {
+  return String(s ?? '').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/\n/g, '&#10;')
 }
 
 // === Realtime: live status updates ===

@@ -20,6 +20,7 @@
 <div class="nav-tabs" id="nav-tabs" hidden>
   <button class="tab-btn active" data-tab="overzicht">Overzicht</button>
   <button class="tab-btn"        data-tab="urenstaat">Urenstaat per afdeling</button>
+  <button class="tab-btn"        data-tab="leidinggevenden">Leidinggevenden</button>
 </div>
 
 <div class="container">
@@ -57,6 +58,51 @@
   <div id="tab-urenstaat" hidden>
     <div id="vm-content">
       <div class="empty"><div class="icon">📂</div><p>Geen urenstaat beschikbaar.</p></div>
+    </div>
+  </div>
+
+  <div id="tab-leidinggevenden" hidden>
+    <div class="table-card" style="margin-bottom:20px">
+      <div class="card-hdr"><h3>Leidinggevende toevoegen</h3></div>
+      <form id="lg-form" style="padding:16px;display:grid;grid-template-columns:1fr 1fr 1fr auto auto;gap:12px;align-items:end">
+        <label style="font-size:12px;color:#5a6a7e;display:flex;flex-direction:column;gap:4px">
+          Naam
+          <input id="lg-naam" type="text" required
+            style="padding:8px 10px;border:1px solid #dde2ea;border-radius:6px;font-size:13px;font-family:Arial,sans-serif">
+        </label>
+        <label style="font-size:12px;color:#5a6a7e;display:flex;flex-direction:column;gap:4px">
+          E-mailadres
+          <input id="lg-email" type="email" required
+            style="padding:8px 10px;border:1px solid #dde2ea;border-radius:6px;font-size:13px;font-family:Arial,sans-serif">
+        </label>
+        <label style="font-size:12px;color:#5a6a7e;display:flex;flex-direction:column;gap:4px">
+          Afdeling
+          <select id="lg-afdeling" required
+            style="padding:8px 10px;border:1px solid #dde2ea;border-radius:6px;font-size:13px;background:#fff;font-family:Arial,sans-serif">
+            <option value="">— kies —</option>
+          </select>
+        </label>
+        <label style="font-size:12px;color:#5a6a7e;display:flex;align-items:center;gap:6px;padding-bottom:9px">
+          <input id="lg-reserve" type="checkbox"> Is reserve
+        </label>
+        <button type="submit" class="btn btn-p" id="lg-submit">Toevoegen &amp; uitnodigen</button>
+      </form>
+      <div id="lg-form-msg" class="login-message" hidden style="margin:0 16px 16px"></div>
+    </div>
+
+    <div class="table-card">
+      <div class="card-hdr"><h3>Leidinggevenden</h3></div>
+      <div class="tbl-wrap">
+        <table id="lg-table">
+          <thead><tr class="cols">
+            <th>Naam</th><th>E-mailadres</th><th>Afdeling</th>
+            <th class="c">Reserve</th><th>Status</th><th></th>
+          </tr></thead>
+          <tbody id="lg-tbody">
+            <tr><td colspan="6" class="empty" style="padding:24px">Bezig met laden…</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>

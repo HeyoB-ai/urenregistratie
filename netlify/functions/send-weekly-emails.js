@@ -77,10 +77,10 @@ async function runJob(trigger) {
   }
   const periode = periodes[0]
 
-  // 2. Leidinggevenden + afdeling-naam
+  // 2. Leidinggevenden + afdeling-naam (incl. reserves)
   const { data: lgvs, error: lErr } = await supa
     .from('leidinggevenden')
-    .select('id, naam, email, afdeling_id, afdelingen(naam)')
+    .select('id, naam, email, afdeling_id, is_reserve, afdelingen(naam)')
   if (lErr) {
     console.error('[send-weekly-emails] leidinggevenden laden mislukt:', lErr)
     return text(500, 'Leidinggevenden laden mislukt: ' + lErr.message)
@@ -106,14 +106,15 @@ async function runJob(trigger) {
     return json(200, { sent: 0, reason: 'all_approved', trigger, periode_id: periode.id })
   }
 
-  // 5. Onderwerpregel afhankelijk van vandaag (NL tz)
-  const subject = subjectForToday(periode)
+  // 5. Onderwerpregels (NL tz) — hoofd; reserve hangt af van afdelingsnaam (per ontvanger)
+  const subjectMain = subjectForToday(periode)
   const deadlineStr = fridayDeadlineStr(periode)
 
-  // 6. Per ontvanger: magic link + e-mail
+  // 6. Per ontvanger: magic link + e-mail (reserve krijgt eigen template + onderwerp)
   const results = []
   for (const lg of ontvangers) {
     const afdNaam = lg.afdelingen?.naam || ''
+    const isReserve = !!lg.is_reserve
     try {
       const { data: linkData, error: linkErr } = await supa.auth.admin.generateLink({
         type: 'magiclink',
@@ -125,15 +126,16 @@ async function runJob(trigger) {
         continue
       }
       const magicLink = linkData.properties.action_link
+      const tplArgs = { naam: lg.naam, afdeling: afdNaam, periode, deadlineStr, magicLink }
 
       await stuurMail({
         to: lg.email,
         toNaam: lg.naam,
-        subject,
-        html: renderEmailHTML({ naam: lg.naam, afdeling: afdNaam, periode, deadlineStr, magicLink }),
-        text: renderEmailText({ naam: lg.naam, afdeling: afdNaam, periode, deadlineStr, magicLink })
+        subject: isReserve ? subjectForReserve(periode, afdNaam) : subjectMain,
+        html: isReserve ? renderReserveHTML(tplArgs) : renderEmailHTML(tplArgs),
+        text: isReserve ? renderReserveText(tplArgs) : renderEmailText(tplArgs)
       })
-      results.push({ email: lg.email, ok: true })
+      results.push({ email: lg.email, ok: true, reserve: isReserve })
     } catch (e) {
       results.push({ email: lg.email, ok: false, error: e.message || String(e) })
     }
@@ -142,7 +144,7 @@ async function runJob(trigger) {
   const sent   = results.filter((r) => r.ok).length
   const failed = results.filter((r) => !r.ok)
   console.log(`[send-weekly-emails] verstuurd: ${sent}/${ontvangers.length}`, {
-    trigger, periode_id: periode.id, subject, failures: failed
+    trigger, periode_id: periode.id, subject: subjectMain, failures: failed
   })
 
   return json(200, {
@@ -150,7 +152,7 @@ async function runJob(trigger) {
     failed: failed.length,
     failures: failed,
     periode_id: periode.id,
-    subject,
+    subject: subjectMain,
     trigger
   })
 }
@@ -188,6 +190,11 @@ function subjectForToday(periode) {
   if (dow === 1) return `Urenregistratie ${wkText} — actie vereist`
   if (dow === 5) return `Laatste kans: urenregistratie ${wkText} — deadline vandaag 17:00`
   return `Herinnering: urenregistratie ${wkText} nog niet goedgekeurd`
+}
+
+function subjectForReserve(periode, afdeling) {
+  const wk = periode.week_nummer ? String(periode.week_nummer).padStart(2, '0') : 'XX'
+  return `Ter info: urenregistratie ${afdeling} week ${wk} nog niet goedgekeurd`
 }
 
 function nlDayOfWeek() {
@@ -269,6 +276,70 @@ function renderEmailText({ naam, afdeling, periode, deadlineStr, magicLink }) {
 De urenregistratie van afdeling ${afdeling} voor ${wk} (${periode.label || ''}) staat klaar voor uw controle.
 
 Deadline: graag goedkeuren vóór ${deadlineStr}.
+
+Open de urenregistratie via deze link (24 uur geldig):
+${magicLink}
+
+Heeft u vragen? Antwoord op deze e-mail of mail naar hr@qbtec.nl.
+
+— QBTec Urenregistratie`
+}
+
+function renderReserveHTML({ naam, afdeling, periode, deadlineStr, magicLink }) {
+  const wk = periode.week_nummer ? `week ${periode.week_nummer}` : 'deze week'
+  return `<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Urenregistratie — reserve</title>
+</head>
+<body style="margin:0;padding:0;font-family:Arial,sans-serif;background:#f4f5f7;color:#1a1a2e">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f4f5f7;padding:24px 0">
+  <tr><td align="center">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="560" style="background:#fff;border:1px solid #dde2ea;border-radius:10px;overflow:hidden;max-width:560px">
+      <tr>
+        <td style="background:#1a3a5c;padding:18px 24px;color:#fff;font-size:16px;font-weight:600;font-family:Arial,sans-serif">
+          QBTec — Urenregistratie (reserve)
+        </td>
+      </tr>
+      <tr><td style="padding:28px 28px 8px;font-size:14px;line-height:1.55;font-family:Arial,sans-serif;color:#1a1a2e">
+        <p style="margin:0 0 16px">Hallo ${esc(naam)},</p>
+        <p style="margin:0 0 16px">
+          U ontvangt deze mail omdat u reserve bent voor afdeling <strong>${esc(afdeling)}</strong>.
+          Actie is alleen vereist als de leidinggevende niet beschikbaar is.
+        </p>
+        <p style="margin:0 0 16px">
+          De urenregistratie van afdeling <strong>${esc(afdeling)}</strong> voor
+          <strong>${esc(wk)}</strong> (${esc(periode.label || '')}) is nog niet goedgekeurd.
+          Deadline: ${esc(deadlineStr)}.
+        </p>
+      </td></tr>
+      <tr><td align="center" style="padding:0 28px 24px">
+        <a href="${esc(magicLink)}" style="display:inline-block;background:#1a3a5c;color:#fff;text-decoration:none;padding:13px 28px;border-radius:6px;font-size:14px;font-weight:600;font-family:Arial,sans-serif">Open urenregistratie</a>
+      </td></tr>
+      <tr><td style="padding:0 28px 24px;font-size:12px;color:#5a6a7e;line-height:1.5;font-family:Arial,sans-serif">
+        Deze link logt u automatisch in en is 24 uur geldig.<br>
+        Werkt de knop niet? Kopieer en plak deze URL in uw browser:<br>
+        <span style="word-break:break-all;color:#1a3a5c">${esc(magicLink)}</span>
+      </td></tr>
+      <tr><td style="background:#f8f9fb;padding:14px 28px;font-size:11px;color:#5a6a7e;border-top:1px solid #dde2ea;font-family:Arial,sans-serif">
+        Heeft u vragen? Antwoord op deze e-mail of mail naar hr@qbtec.nl.
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>`
+}
+
+function renderReserveText({ naam, afdeling, periode, deadlineStr, magicLink }) {
+  const wk = periode.week_nummer ? `week ${periode.week_nummer}` : 'deze week'
+  return `Hallo ${naam},
+
+U ontvangt deze mail omdat u reserve bent voor afdeling ${afdeling}. Actie is alleen vereist als de leidinggevende niet beschikbaar is.
+
+De urenregistratie van afdeling ${afdeling} voor ${wk} (${periode.label || ''}) is nog niet goedgekeurd. Deadline: ${deadlineStr}.
 
 Open de urenregistratie via deze link (24 uur geldig):
 ${magicLink}
