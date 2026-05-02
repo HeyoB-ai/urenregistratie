@@ -83,11 +83,22 @@ function switchTab(name) {
   $('tab-overzicht').hidden       = name !== 'overzicht'
   $('tab-urenstaat').hidden       = name !== 'urenstaat'
   $('tab-leidinggevenden').hidden = name !== 'leidinggevenden'
+  updateActionButtons()
   if (name === 'leidinggevenden') {
     laadLeidinggevenden()
   } else if (cache.periode) {
     renderActiveTab()
   }
+}
+
+// Per-tab zichtbaarheid van de actieknoppen in de periode-info-balk.
+// btn-emails: alleen op Urenstaat, en alleen als periode open is.
+// btn-nmbrs:  alleen op Overzicht.
+// btn-sluit:  blijft periode-state-gedreven (geregeld in updatePeriodeInfoBar).
+function updateActionButtons() {
+  const isOpen = cache.periode?.status === 'open'
+  $('btn-emails').hidden = !(activeTab === 'urenstaat' && isOpen)
+  $('btn-nmbrs').hidden  = activeTab !== 'overzicht'
 }
 
 // === Periode laden — alleen meest recente met status='open' ===
@@ -182,8 +193,8 @@ function updatePeriodeInfoBar(periode, data, goedkeuringen) {
     badge.className = 'badge b-open'
   }
 
-  $('btn-emails').hidden = !isOpen
-  $('btn-sluit').hidden  = !(isOpen && allOk)
+  $('btn-sluit').hidden = !(isOpen && allOk)
+  updateActionButtons()
 }
 
 function setHdrPeriod(text) {
