@@ -168,15 +168,11 @@ function parseImmotix(rows) {
   }
 
   // Eerste datum uit het label voor week + jaar
-  const dm = label.match(/(\d{1,2})-(\d{1,2})-(\d{4})/)
-  if (!dm) {
+  const startDate = parseLabelStartDate(label)
+  if (!startDate) {
     throw new Error(
       `Kan periode niet bepalen uit bestandsnaam — geen datum gevonden in label '${label}'.`
     )
-  }
-  const startDate = makeDateUTC(+dm[1], +dm[2], +dm[3])
-  if (!startDate) {
-    throw new Error(`Ongeldige startdatum in label: '${label}'`)
   }
   const { week, year } = isoWeek(startDate)
 
@@ -244,6 +240,30 @@ function parseImmotix(rows) {
     medewerkers: Object.values(medewerkersMap),
     regels
   }
+}
+
+const NL_MAANDEN = {
+  jan: 1, feb: 2, mrt: 3, apr: 4, mei: 5, jun: 6,
+  jul: 7, aug: 8, sep: 9, okt: 10, nov: 11, dec: 12
+}
+
+function parseLabelStartDate(label) {
+  // Formaat 1: "DD-MM-YYYY t/m DD-MM-YYYY"
+  const m1 = label.match(/(\d{1,2})-(\d{1,2})-(\d{4})/)
+  if (m1) {
+    const d = makeDateUTC(+m1[1], +m1[2], +m1[3])
+    if (d) return d
+  }
+  // Formaat 2: "mrt 23, 2026 - mrt 29, 2026" (SheetJS server-side output)
+  const m2 = label.match(/([a-zA-Z]{3})\s+(\d{1,2}),\s*(\d{4})/)
+  if (m2) {
+    const maand = NL_MAANDEN[m2[1].toLowerCase()]
+    if (maand) {
+      const d = makeDateUTC(+m2[2], maand, +m2[3])
+      if (d) return d
+    }
+  }
+  return null
 }
 
 function makeDateUTC(day, month, year) {
