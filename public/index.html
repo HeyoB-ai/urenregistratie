@@ -22,11 +22,26 @@
       <button id="login-button" class="login-button" type="submit">Stuur inloglink</button>
     </form>
 
+    <form id="debug-login-form" novalidate hidden style="margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed #c00;">
+      <p style="color:#c00; font-size: 0.85rem; margin: 0 0 0.75rem;">⚠️ Debug-login (alleen voor development)</p>
+      <div class="login-field">
+        <label for="debug-email">E-mailadres</label>
+        <input id="debug-email" name="email" type="email" autocomplete="email" required>
+      </div>
+      <div class="login-field">
+        <label for="debug-password">Wachtwoord</label>
+        <input id="debug-password" name="password" type="password" autocomplete="current-password" required>
+      </div>
+      <button id="debug-login-button" class="login-button" type="submit">Inloggen met wachtwoord</button>
+    </form>
+
     <div id="login-message" class="login-message" hidden></div>
   </main>
 
   <script type="module">
     import { sendMagicLink } from './assets/auth.js'
+    import { supabase } from './assets/supabase.js'
+    import { checkAuthAndRedirect } from './assets/auth.js'
 
     const form = document.getElementById('login-form')
     const button = document.getElementById('login-button')
@@ -61,6 +76,36 @@
         form.hidden = true
       }
     })
+
+    // Debug-only wachtwoord login (?debug=1)
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('debug') === '1') {
+      const debugForm = document.getElementById('debug-login-form')
+      const debugButton = document.getElementById('debug-login-button')
+      const debugEmail = document.getElementById('debug-email')
+      const debugPassword = document.getElementById('debug-password')
+      debugForm.hidden = false
+
+      debugForm.addEventListener('submit', async (e) => {
+        e.preventDefault()
+        const email = debugEmail.value.trim()
+        const password = debugPassword.value
+        if (!email || !password) return
+        debugButton.disabled = true
+        debugButton.textContent = 'Inloggen…'
+        message.hidden = true
+
+        const { error } = await supabase.auth.signInWithPassword({ email, password })
+
+        if (error) {
+          showMessage('error', 'Login mislukt: ' + (error.message || 'probeer opnieuw.'))
+          debugButton.disabled = false
+          debugButton.textContent = 'Inloggen met wachtwoord'
+        } else {
+          await checkAuthAndRedirect()
+        }
+      })
+    }
   </script>
 </body>
 </html>
