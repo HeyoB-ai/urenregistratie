@@ -13,6 +13,15 @@ const F = (v, d = 2) =>
 
 const ESC = (s) => String(s ?? '').replace(/"/g, '&quot;').replace(/'/g, "&#39;")
 
+// "2026-03-23" -> "23-03-2026" voor display. Laat overige formaten ongewijzigd zodat
+// data-datum attributen (key voor corrections.js findDag) als ISO kunnen blijven.
+export function formatDatumNL(s) {
+  if (s == null || s === '') return ''
+  const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (!m) return String(s)
+  return `${m[3]}-${m[2]}-${m[1]}`
+}
+
 export function toHHMM(dec) {
   if (dec === null || dec === undefined) return '—'
   const h = Math.floor(dec)
@@ -210,7 +219,7 @@ export function renderVM(data, periode, opts = {}) {
           h += `<td rowspan="${rs}" style="font-weight:500;vertical-align:top;padding-top:9px;white-space:nowrap">${ESC(m.naam)}</td>`
         }
 
-        h += `<td style="color:#5a6a7e;white-space:nowrap">${ESC(dag.datum)}</td>`
+        h += `<td style="color:#5a6a7e;white-space:nowrap">${ESC(formatDatumNL(dag.datum))}</td>`
         h += `<td class="r" data-col="gepland" data-val="${dag.gepland ?? ''}">${F(dag.gepland)}</td>`
 
         h += `<td class="c sl" style="white-space:nowrap">`
