@@ -22,22 +22,12 @@
       <button id="login-button" class="login-button" type="submit">Stuur inloglink</button>
     </form>
 
-    <form id="debug-login-form" novalidate hidden style="margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed #c00;">
-      <p style="color:#c00; font-size: 0.85rem; margin: 0 0 0.75rem;">⚠️ Debug-login (alleen voor development)</p>
-      <div style="display:flex; gap:0.5rem; margin-bottom:0.75rem;">
-        <button type="button" class="login-button" data-quick="hr" style="flex:1; padding:0.5rem; font-size:0.85rem; background:#1565c0;">HR test</button>
-        <button type="button" class="login-button" data-quick="voorman" style="flex:1; padding:0.5rem; font-size:0.85rem; background:#2e7d32;">Voorman test</button>
-      </div>
-      <div class="login-field">
-        <label for="debug-email">E-mailadres</label>
-        <input id="debug-email" name="email" type="email" autocomplete="email" required>
-      </div>
-      <div class="login-field">
-        <label for="debug-password">Wachtwoord</label>
-        <input id="debug-password" name="password" type="password" autocomplete="current-password" required>
-      </div>
-      <button id="debug-login-button" class="login-button" type="submit">Inloggen met wachtwoord</button>
-    </form>
+    <div id="password-login" style="margin-top:16px;border-top:1px solid #dde2ea;padding-top:16px;">
+      <label style="font-size:12px;color:#5a6a7e;">Wachtwoord (tijdelijk voor testen)</label>
+      <input type="password" id="password-input"
+        style="width:100%;padding:10px;border:1px solid #dde2ea;border-radius:6px;margin-top:6px;box-sizing:border-box;">
+      <button type="button" id="password-login-button" class="login-button" style="margin-top:8px;">Inloggen met wachtwoord</button>
+    </div>
 
     <div id="login-message" class="login-message" hidden></div>
   </main>
@@ -81,49 +71,29 @@
       }
     })
 
-    // Debug-only wachtwoord login (?debug=1)
-    const params = new URLSearchParams(window.location.search)
-    if (params.get('debug') === '1') {
-      const debugForm = document.getElementById('debug-login-form')
-      const debugButton = document.getElementById('debug-login-button')
-      const debugEmail = document.getElementById('debug-email')
-      const debugPassword = document.getElementById('debug-password')
-      debugForm.hidden = false
+    const passwordButton = document.getElementById('password-login-button')
+    const passwordInput = document.getElementById('password-input')
 
-      const TEST_USERS = {
-        hr:      { email: 'heyobeentje11@hotmail.com', password: 'Test1234!' },
-        voorman: { email: 'voorman.test@qbtec.nl',     password: 'Test1234!' }
+    passwordButton.addEventListener('click', async () => {
+      const email = emailInput.value.trim()
+      const password = passwordInput.value
+      if (!email) { emailInput.focus(); return }
+      if (!password) { passwordInput.focus(); return }
+
+      passwordButton.disabled = true
+      passwordButton.textContent = 'Inloggen…'
+      message.hidden = true
+
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
+
+      if (error) {
+        showMessage('error', 'Login mislukt: ' + (error.message || 'probeer opnieuw.'))
+        passwordButton.disabled = false
+        passwordButton.textContent = 'Inloggen met wachtwoord'
+      } else {
+        await checkAuthAndRedirect()
       }
-      debugForm.querySelectorAll('button[data-quick]').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const u = TEST_USERS[btn.dataset.quick]
-          if (!u) return
-          debugEmail.value = u.email
-          debugPassword.value = u.password
-          debugForm.requestSubmit(debugButton)
-        })
-      })
-
-      debugForm.addEventListener('submit', async (e) => {
-        e.preventDefault()
-        const email = debugEmail.value.trim()
-        const password = debugPassword.value
-        if (!email || !password) return
-        debugButton.disabled = true
-        debugButton.textContent = 'Inloggen…'
-        message.hidden = true
-
-        const { error } = await supabase.auth.signInWithPassword({ email, password })
-
-        if (error) {
-          showMessage('error', 'Login mislukt: ' + (error.message || 'probeer opnieuw.'))
-          debugButton.disabled = false
-          debugButton.textContent = 'Inloggen met wachtwoord'
-        } else {
-          await checkAuthAndRedirect()
-        }
-      })
-    }
+    })
   </script>
 </body>
 </html>
