@@ -24,6 +24,10 @@
 
     <form id="debug-login-form" novalidate hidden style="margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed #c00;">
       <p style="color:#c00; font-size: 0.85rem; margin: 0 0 0.75rem;">⚠️ Debug-login (alleen voor development)</p>
+      <div style="display:flex; gap:0.5rem; margin-bottom:0.75rem;">
+        <button type="button" class="login-button" data-quick="hr" style="flex:1; padding:0.5rem; font-size:0.85rem; background:#1565c0;">HR test</button>
+        <button type="button" class="login-button" data-quick="voorman" style="flex:1; padding:0.5rem; font-size:0.85rem; background:#2e7d32;">Voorman test</button>
+      </div>
       <div class="login-field">
         <label for="debug-email">E-mailadres</label>
         <input id="debug-email" name="email" type="email" autocomplete="email" required>
@@ -85,6 +89,20 @@
       const debugEmail = document.getElementById('debug-email')
       const debugPassword = document.getElementById('debug-password')
       debugForm.hidden = false
+
+      const TEST_USERS = {
+        hr:      { email: 'heyobeentje11@hotmail.com', password: 'Test1234!' },
+        voorman: { email: 'voorman.test@qbtec.nl',     password: 'Test1234!' }
+      }
+      debugForm.querySelectorAll('button[data-quick]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const u = TEST_USERS[btn.dataset.quick]
+          if (!u) return
+          debugEmail.value = u.email
+          debugPassword.value = u.password
+          debugForm.requestSubmit(debugButton)
+        })
+      })
 
       debugForm.addEventListener('submit', async (e) => {
         e.preventDefault()
