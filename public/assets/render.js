@@ -101,6 +101,7 @@ export function renderVM(data, periode, opts = {}) {
   opts.approvedMdws  ||= new Set()
   const readOnly = !!opts.readOnly || (periode && periode.status === 'gesloten')
   const hideApproval = !!opts.hideApproval
+  const hrOverride = !!opts.hrOverride
 
   const root = document.getElementById('vm-content')
   if (!root) return
@@ -167,7 +168,7 @@ export function renderVM(data, periode, opts = {}) {
         <tbody>`
 
     mdws.forEach((m) => {
-      const approved = readOnly || afdGoedgekeurd || isMdwApproved(m, opts)
+      const approved = readOnly || (!hrOverride && (afdGoedgekeurd || isMdwApproved(m, opts)))
       const status = getStatus(m, opts)
       const note = getNote(m)
       const rs = m.dagen.length + 1

@@ -168,7 +168,7 @@ function renderActiveTab() {
   if (activeTab === 'overzicht') {
     renderHR(data, periode, { goedkeuringen })
   } else {
-    renderVM(data, periode, { goedkeuringen, hideApproval: true })
+    renderVM(data, periode, { goedkeuringen, hideApproval: true, hrOverride: true })
   }
 }
 
