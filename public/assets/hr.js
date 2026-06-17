@@ -193,7 +193,7 @@ function updatePeriodeInfoBar(periode, data, goedkeuringen) {
     badge.className = 'badge b-open'
   }
 
-  $('btn-sluit').hidden = !(isOpen && allOk)
+  $('btn-sluit').hidden = !isOpen
   updateActionButtons()
 }
 
@@ -308,7 +308,12 @@ async function sluitPeriode() {
   const periode = cache.periode
   if (!periode || periode.status === 'gesloten') { toast('Periode is al gesloten'); return }
   const wk = periode.week_nummer ? `week ${periode.week_nummer}` : 'deze periode'
-  if (!confirm(`Weet u zeker dat u ${wk} wilt sluiten? Dit kan niet ongedaan worden gemaakt.`)) return
+  const afdIds = [...new Set(cache.data.map((m) => m.afdeling_id).filter(Boolean))]
+  const alleAkkoord = afdIds.length > 0 && afdIds.every((id) => cache.goedkeuringen[id])
+  const waarschuwing = alleAkkoord
+    ? ''
+    : '\n\nLet op: niet alle afdelingen zijn goedgekeurd.'
+  if (!confirm(`Weet u zeker dat u ${wk} wilt sluiten? Dit kan niet ongedaan worden gemaakt.${waarschuwing}`)) return
 
   const { error } = await supabase
     .from('perioden')
